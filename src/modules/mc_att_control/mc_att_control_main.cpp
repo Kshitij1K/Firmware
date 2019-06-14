@@ -530,7 +530,22 @@ MulticopterAttitudeControl::control_attitude()
 	// physical thrust axis is the negative of body z axis
 	_thrust_sp = -_v_att_sp.thrust_body[2];
 
-	_rates_sp = _attitude_control.update(Quatf(_v_att.q), Quatf(_v_att_sp.q_d), _v_att_sp.yaw_sp_move_rate);
+	// HACKING FROM HERE ON
+	if (_v_control_mode.flag_control_offboard_enabled) {
+	  Quatf q(_v_att.q);
+	  Quatf qd(_v_att_sp.q_d);
+	  Eulerf current_euler(q);
+	  Eulerf desired_euler(qd);
+	  qd = Quatf(Eulerf(desired_euler.phi(), desired_euler.theta(), current_euler.psi()));
+	  _rates_sp = _attitude_control.update(q, qd, _v_att_sp.yaw_sp_move_rate);
+	}
+	else _rates_sp = _attitude_control.update(Quatf(_v_att.q), Quatf(_v_att_sp.q_d), _v_att_sp.yaw_sp_move_rate);
+	// ugly hack to get yaw rate
+	if (_v_control_mode.flag_control_offboard_enabled) {
+		vehicle_rates_setpoint_poll();
+		_rates_sp(2) = _v_rates_sp.yaw;
+    	}
+
 }
 
 /*
@@ -820,12 +835,12 @@ MulticopterAttitudeControl::run()
 			const bool is_hovering = _vehicle_status.is_rotary_wing && !_vehicle_status.in_transition_mode;
 
 			// vehicle is a tailsitter in transition mode
-			const bool is_tailsitter_transition = _vehicle_status.in_transition_mode && _is_tailsitter;
+			//const bool is_tailsitter_transition = _vehicle_status.in_transition_mode && _is_tailsitter;
 
-			bool run_att_ctrl = _v_control_mode.flag_control_attitude_enabled && (is_hovering || is_tailsitter_transition);
+			//bool run_att_ctrl = _v_control_mode.flag_control_attitude_enabled && (is_hovering || is_tailsitter_transition);
 
 
-			if (run_att_ctrl) {
+			if (_v_control_mode.flag_control_attitude_enabled) {
 				if (attitude_updated) {
 					// Generate the attitude setpoint from stick inputs if we are in Manual/Stabilized mode
 					if (_v_control_mode.flag_control_manual_enabled &&
@@ -837,7 +852,19 @@ MulticopterAttitudeControl::run()
 					}
 
 					control_attitude();
-					publish_rates_setpoint();
+					_v_rates_sp.roll = _rates_sp(0);
+					_v_rates_sp.pitch = _rates_sp(1);
+					_v_rates_sp.yaw = _rates_sp(2);
+					_v_rates_sp.thrust_body[0] = 0.0f;
+					_v_rates_sp.thrust_body[1] = 0.0f;
+					_v_rates_sp.thrust_body[2] = -_thrust_sp;
+					_v_rates_sp.timestamp = hrt_absolute_time();
+
+					// Don't republish if in offboard mode, since we send the yaw rate here.
+					if (!_v_control_mode.flag_control_offboard_enabled) {
+					orb_publish_auto(ORB_ID(vehicle_rates_setpoint), &_v_rates_sp_pub, &_v_rates_sp, nullptr, ORB_PRIO_DEFAULT);
+					}
+
 				}
 
 			} else {
