@@ -82,6 +82,7 @@
 #include <uORB/topics/vehicle_rates_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_trajectory_waypoint.h>
+#include <uORB/topics/gripper_servo.h>
 
 #include "mavlink_ftp.h"
 #include "mavlink_log_handler.h"
@@ -165,6 +166,7 @@ private:
 	void handle_message_set_position_target_local_ned(mavlink_message_t *msg);
 	void handle_message_trajectory_representation_waypoints(mavlink_message_t *msg);
 	void handle_message_vision_position_estimate(mavlink_message_t *msg);
+	void handle_message_gripper_servo(mavlink_message_t *msg);
 
 	void *receive_thread(void *arg);
 
@@ -254,6 +256,7 @@ private:
 	orb_advert_t _trajectory_waypoint_pub{nullptr};
 	orb_advert_t _transponder_report_pub{nullptr};
 	orb_advert_t _visual_odometry_pub{nullptr};
+	orb_advert_t _gripper_servo_pub{nullptr};
 
 	static constexpr int _gps_inject_data_queue_size{6};
 

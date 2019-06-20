@@ -263,6 +263,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_debug_float_array(msg);
 		break;
 
+	case MAVLINK_MSG_ID_GRIPPER_SERVO:
+		handle_message_gripper_servo(msg);
+        	break;
+
 	default:
 		break;
 	}
@@ -543,6 +547,27 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 	if (send_ack) {
 		acknowledge(msg->sysid, msg->compid, cmd_mavlink.command, result);
 	}
+}
+
+void
+MavlinkReceiver::handle_message_gripper_servo(mavlink_message_t *msg)
+{
+    mavlink_gripper_servo_t man;
+    mavlink_msg_gripper_servo_decode(msg, &man);
+
+    struct gripper_servo_s key;
+    memset(&key, 0, sizeof(key));
+
+    key.timestamp = hrt_absolute_time();
+    key.servo_setpoint = man.servo_setpoint;
+
+    if (_gripper_servo_pub == nullptr) {
+        _gripper_servo_pub = orb_advertise(ORB_ID(gripper_servo), &key);
+
+    } else {
+        orb_publish(ORB_ID(gripper_servo), _gripper_servo_pub, &key);
+    }
+
 }
 
 void

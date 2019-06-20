@@ -57,6 +57,7 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/landing_gear.h>
+#include <uORB/topics/gripper_servo.h>
 #include <vtol_att_control/vtol_type.h>
 
 #include <AttitudeControl.hpp>
@@ -114,6 +115,7 @@ private:
 	bool		vehicle_rates_setpoint_poll();
 	void		vehicle_status_poll();
 	void 		landing_gear_state_poll();
+	void		gripper_servo_poll();
 
 	void		publish_actuator_controls();
 	void		publish_rates_setpoint();
@@ -164,6 +166,7 @@ private:
 	int		_sensor_bias_sub{-1};		/**< sensor in-run bias correction subscription */
 	int		_vehicle_land_detected_sub{-1};	/**< vehicle land detected subscription */
 	int		_landing_gear_sub{-1};
+	int		_gripper_servo_sub{-1};
 
 	unsigned _gyro_count{1};
 	int _selected_gyro{0};
@@ -192,6 +195,7 @@ private:
 	struct sensor_bias_s			_sensor_bias {};	/**< sensor in-run bias corrections */
 	struct vehicle_land_detected_s		_vehicle_land_detected {};
 	struct landing_gear_s 			_landing_gear {};
+	struct gripper_servo_s			_gripper_servo {};
 
 	MultirotorMixer::saturation_status _saturation_status{};
 

@@ -213,6 +213,18 @@ MulticopterAttitudeControl::vehicle_manual_poll()
 }
 
 void
+MulticopterAttitudeControl::gripper_servo_poll()
+{
+	bool updated;
+	orb_check(_gripper_servo_sub, &updated);
+
+				// PX4_INFO("_gripper_servo %d",updated);
+	if (updated) {
+		orb_copy(ORB_ID(gripper_servo), _gripper_servo_sub, &_gripper_servo);
+	}
+}
+
+void
 MulticopterAttitudeControl::vehicle_attitude_setpoint_poll()
 {
 	/* check if there is a new setpoint */
@@ -369,6 +381,7 @@ MulticopterAttitudeControl::landing_gear_state_poll()
 		orb_copy(ORB_ID(landing_gear), _landing_gear_sub, &_landing_gear);
 	}
 }
+
 
 float
 MulticopterAttitudeControl::throttle_curve(float throttle_stick_input)
@@ -710,6 +723,7 @@ MulticopterAttitudeControl::publish_actuator_controls()
 	_actuators.control[1] = (PX4_ISFINITE(_att_control(1))) ? _att_control(1) : 0.0f;
 	_actuators.control[2] = (PX4_ISFINITE(_att_control(2))) ? _att_control(2) : 0.0f;
 	_actuators.control[3] = (PX4_ISFINITE(_thrust_sp)) ? _thrust_sp : 0.0f;
+	_actuators.control[4] = (float)_gripper_servo.servo_setpoint;
 	_actuators.control[7] = (float)_landing_gear.landing_gear;
 	_actuators.timestamp = hrt_absolute_time();
 	_actuators.timestamp_sample = _sensor_gyro.timestamp;
@@ -742,6 +756,7 @@ MulticopterAttitudeControl::run()
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
 	_motor_limits_sub = orb_subscribe(ORB_ID(multirotor_motor_limits));
 	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
+	_gripper_servo_sub = orb_subscribe(ORB_ID(gripper_servo));
 
 	_gyro_count = math::constrain(orb_group_count(ORB_ID(sensor_gyro)), 1, MAX_GYRO_COUNT);
 
@@ -817,6 +832,7 @@ MulticopterAttitudeControl::run()
 			sensor_bias_poll();
 			vehicle_land_detected_poll();
 			landing_gear_state_poll();
+			gripper_servo_poll();
 			const bool manual_control_updated = vehicle_manual_poll();
 			const bool attitude_updated = vehicle_attitude_poll();
 			attitude_dt += dt;
@@ -941,6 +957,7 @@ MulticopterAttitudeControl::run()
 	orb_unsubscribe(_vehicle_status_sub);
 	orb_unsubscribe(_motor_limits_sub);
 	orb_unsubscribe(_battery_status_sub);
+	orb_unsubscribe(_gripper_servo_sub);
 
 	for (unsigned s = 0; s < _gyro_count; s++) {
 		orb_unsubscribe(_sensor_gyro_sub[s]);
