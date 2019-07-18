@@ -106,6 +106,10 @@ MulticopterAttitudeControl::parameters_updated()
 	_rate_d = Vector3f(_param_mc_rollrate_d.get(), _param_mc_pitchrate_d.get(), _param_mc_yawrate_d.get());
 	_rate_ff = Vector3f(_param_mc_rollrate_ff.get(), _param_mc_pitchrate_ff.get(), _param_mc_yawrate_ff.get());
 
+	// The controller gain K is used to convert the parallel (P + I/s + sD) form
+	// to the ideal (K * [1 + 1/sTi + sTd]) form
+	_rate_k = Vector3f(_param_mc_rollrate_k.get(), _param_mc_pitchrate_k.get(), _param_mc_yawrate_k.get());
+
 	if (fabsf(_lp_filters_d.get_cutoff_freq() - _param_mc_dterm_cutoff.get()) > 0.01f) {
 		_lp_filters_d.set_cutoff_frequency(_loop_update_rate_hz, _param_mc_dterm_cutoff.get());
 		_lp_filters_d.reset(_rates_prev);
@@ -446,9 +450,9 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	/* apply low-pass filtering to the rates for D-term */
 	Vector3f rates_filtered(_lp_filters_d.apply(rates));
 
-	_att_control = rates_p_scaled.emult(rates_err) +
-		       _rates_int -
-		       rates_d_scaled.emult(rates_filtered - _rates_prev_filtered) / dt +
+	_att_control = _rate_k.emult(rates_p_scaled.emult(rates_err) +
+				     _rates_int -
+				     rates_d_scaled.emult(rates_filtered - _rates_prev_filtered) / dt) +
 		       _rate_ff.emult(_rates_sp);
 
 	_rates_prev = rates;
@@ -481,8 +485,17 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 
 			}
 
+			// I term factor: reduce the I gain with increasing rate error.
+			// This counteracts a non-linear effect where the integral builds up quickly upon a large setpoint
+			// change (noticeable in a bounce-back effect after a flip).
+			// The formula leads to a gradual decrease w/o steps, while only affecting the cases where it should:
+			// with the parameter set to 400 degrees, up to 100 deg rate error, i_factor is almost 1 (having no effect),
+			// and up to 200 deg error leads to <25% reduction of I.
+			float i_factor = rates_err(i) / math::radians(400.f);
+			i_factor = math::max(0.0f, 1.f - i_factor * i_factor);
+
 			// Perform the integration using a first order method and do not propagate the result if out of range or invalid
-			float rate_i = _rates_int(i) + rates_i_scaled(i) * rates_err(i) * dt;
+			float rate_i = _rates_int(i) + i_factor * rates_i_scaled(i) * rates_err(i) * dt;
 
 			if (PX4_ISFINITE(rate_i) && rate_i > -_rate_int_lim(i) && rate_i < _rate_int_lim(i)) {
 				_rates_int(i) = rate_i;
