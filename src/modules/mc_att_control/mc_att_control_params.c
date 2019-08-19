@@ -443,6 +443,15 @@ PARAM_DEFINE_FLOAT(MC_RATT_TH, 0.8f);
 PARAM_DEFINE_INT32(MC_BAT_SCALE_EN, 0);
 
 /**
+ * NMPC flag
+ *
+ * Enable roll_pitch_yawrate_thrust msg based control.
+ * @boolean
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(MC_NMPC_EN, 0);
+
+/**
  * TPA P Breakpoint
  *
  * Throttle PID Attenuation (TPA)

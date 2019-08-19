@@ -544,7 +544,7 @@ MulticopterAttitudeControl::control_attitude()
 	_thrust_sp = -_v_att_sp.thrust_body[2];
 
 	// HACKING FROM HERE ON
-	if (_v_control_mode.flag_control_offboard_enabled) {
+	if (_v_control_mode.flag_control_offboard_enabled && _param_mc_nmpc_en.get()) {
 	  Quatf q(_v_att.q);
 	  Quatf qd(_v_att_sp.q_d);
 	  Eulerf current_euler(q);
@@ -554,7 +554,7 @@ MulticopterAttitudeControl::control_attitude()
 	}
 	else _rates_sp = _attitude_control.update(Quatf(_v_att.q), Quatf(_v_att_sp.q_d), _v_att_sp.yaw_sp_move_rate);
 	// ugly hack to get yaw rate
-	if (_v_control_mode.flag_control_offboard_enabled) {
+	if (_v_control_mode.flag_control_offboard_enabled && _param_mc_nmpc_en.get()) {
 		vehicle_rates_setpoint_poll();
 		_rates_sp(2) = _v_rates_sp.yaw;
     	}

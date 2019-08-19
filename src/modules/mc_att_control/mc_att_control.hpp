@@ -265,6 +265,7 @@ private:
 		(ParamFloat<px4::params::MC_RATT_TH>) _param_mc_ratt_th,
 
 		(ParamBool<px4::params::MC_BAT_SCALE_EN>) _param_mc_bat_scale_en,
+		(ParamBool<px4::params::MC_NMPC_EN>) _param_mc_nmpc_en,
 
 		(ParamInt<px4::params::SENS_BOARD_ROT>) _param_sens_board_rot,
 
