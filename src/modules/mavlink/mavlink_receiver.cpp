@@ -267,6 +267,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_gripper_servo(msg);
         	break;
 
+	case MAVLINK_MSG_ID_HEIGHT:
+		handle_message_height(msg);
+        	break;
+
 	default:
 		break;
 	}
@@ -566,6 +570,27 @@ MavlinkReceiver::handle_message_gripper_servo(mavlink_message_t *msg)
 
     } else {
         orb_publish(ORB_ID(gripper_servo), _gripper_servo_pub, &key);
+    }
+
+}
+
+void
+MavlinkReceiver::handle_message_height(mavlink_message_t *msg)
+{
+    mavlink_height_t man;
+    mavlink_msg_height_decode(msg, &man);
+
+    struct height_s key;
+    memset(&key, 0, sizeof(key));
+
+    key.timestamp = hrt_absolute_time();
+    key.height = man.height;
+
+    if (_height_pub == nullptr) {
+        _height_pub = orb_advertise(ORB_ID(height), &key);
+
+    } else {
+        orb_publish(ORB_ID(height), _height_pub, &key);
     }
 
 }
