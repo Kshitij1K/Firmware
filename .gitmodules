@@ -60,5 +60,5 @@
 	branch = master
 [submodule "mavlink/include/mavlink/v2.0"]
 	path = mavlink/include/mavlink/v2.0
-	url = https://github.com/Kshitij1K/c_library_v2.git
+	url = https://github.com/AerialRobotics-IITK/c_library_v2
 	branch = kabeer_new
