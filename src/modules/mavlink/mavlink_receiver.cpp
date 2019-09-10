@@ -585,7 +585,9 @@ MavlinkReceiver::handle_message_mission_height_setpoint(mavlink_message_t *msg)
 
     key.timestamp = hrt_absolute_time();
     key.height = man.height;
-
+	key.yaw = man.yaw;
+	key.avoidance_flag = man.avoidance_flag;
+	
     if (_mission_height_setpoint_pub == nullptr) {
         _mission_height_setpoint_pub = orb_advertise(ORB_ID(mission_height_setpoint), &key);
 
